@@ -1,3 +1,6 @@
+import {DBHelper} from './dbhelper.js';
+import '../css/styles.css';
+
 let restaurant;
 var newMap;
 

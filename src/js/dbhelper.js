@@ -170,3 +170,4 @@ class DBHelper {
 
 }
 
+export {DBHelper};
