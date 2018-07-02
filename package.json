@@ -1,0 +1,35 @@
+{
+  "name": "mws-restaurant-stage-1",
+  "version": "1.0.0",
+  "description": "class project for MWS nanodegree on Udacity",
+  "main": "js/main.js",
+  "dependencies": {
+    "css-loader": "^0.28.11",
+    "style-loader": "^0.21.0",
+    "webpack": "^4.14.0",
+    "webpack-cli": "^3.0.8"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "gulp": "^3.9.1",
+    "gulp-clean-css": "^3.9.4",
+    "gulp-imagemin": "^4.1.0",
+    "gulp-sourcemaps": "^2.6.4",
+    "gulp-webp": "^3.0.0",
+    "imagemin-pngquant": "^5.1.0",
+    "imagemin-webp": "^4.1.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bethanyr/mws-restaurant-stage-1.git"
+  },
+  "author": "modifications by Bethany Rentz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bethanyr/mws-restaurant-stage-1/issues"
+  },
+  "homepage": "https://github.com/bethanyr/mws-restaurant-stage-1#readme"
+}
