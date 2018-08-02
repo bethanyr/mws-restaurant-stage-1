@@ -27,3 +27,13 @@ self.addEventListener('fetch', function(event) {
     })
   );
 });
+
+self.addEventListener('activate', function(event) {
+  event.waitUntil(
+    createDB()
+  );
+});
+
+function createDB() {
+  // put code to create restaurants db here
+}
