@@ -1,12 +1,14 @@
-const staticCache = 'restaurant-cache-v1';
+const staticCache = 'restaurant-cache-v2';
 
 const filesToCache = [
   'dist/js/main.js',
   'dist/js/dbhelper.js',
   'dist/js/restaurant_info.js',
   'dist/styles.css',
+  'dist/js/idb.js',
   '/',
-  'restaurant.html'
+  'restaurant.html',
+  'index.html'
   
 ]
 

@@ -8,7 +8,7 @@ var markers = []
  * Fetch neighborhoods and cuisines as soon as the page is loaded.
  */
 document.addEventListener('DOMContentLoaded', (event) => {
-  initMap(); // added 
+  initMap();
   fetchNeighborhoods();
   fetchCuisines();
 });
@@ -21,6 +21,7 @@ fetchNeighborhoods = () => {
     if (error) { // Got an error
       console.error(error);
     } else {
+      console.log('fetchNeighborhoods', neighborhoods);
       self.neighborhoods = neighborhoods;
       fillNeighborhoodsHTML();
     }

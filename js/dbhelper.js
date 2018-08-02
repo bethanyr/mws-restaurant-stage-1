@@ -1,8 +1,7 @@
-/**
- * Common database helper functions.
- */
-class DBHelper {
+// import idb from 'idb';
 
+class DBHelper {
+  
   /**
    * Database URL.
    * Change this to restaurants.json file location on your server.
@@ -12,23 +11,53 @@ class DBHelper {
     return `http://localhost:${port}/restaurants`;
   }
 
+  static openDatabase() {
+    if (!navigator.serviceWorker) {
+      return Promise.resolve();
+    }
+    console.log('in openDatabase');
+    return idb.open('restaurant-db', 1, function(upgradeDB) {
+      let store = upgradeDB.createObjectStore('restaurant', { keyPath: 'id' });
+      store.createIndex('by-neighborhood', 'neighborhood');
+      store.createIndex('by-cuisine', 'cuisine_type');
+    })
+  }
+  static fetchRestaurantsFromApi() {
+    
+    fetch(`${DBHelper.DATABASE_URL}`)
+      // .then(response => console.log(response))
+      .then(response => response.json())
+  }
+  
   /**
    * Fetch all restaurants.
    */
   static fetchRestaurants(callback) {
-    let xhr = new XMLHttpRequest();
-    xhr.open('GET', DBHelper.DATABASE_URL);
-    xhr.onload = () => {
-      if (xhr.status === 200) { // Got a success response from server!
-        const json = JSON.parse(xhr.responseText);
-        const restaurants = json;
-        callback(null, restaurants);
-      } else { // Oops!. Got an error from server.
-        const error = (`Request failed. Returned status of ${xhr.status}`);
-        callback(error, null);
-      }
-    };
-    xhr.send();
+    
+    fetch(`${DBHelper.DATABASE_URL}`)
+      // .then(response => console.log(response))
+      .then(response => response.json())
+      .then(function(restaurants) {
+        // loop through each restaurant and add it to the store - do we need to check it exists?
+        // load the items into index db
+        let dbPromise = DBHelper.openDatabase();
+        dbPromise.then(function(db) {
+          let tx = db.transaction('restaurant', 'readwrite');
+          let store = tx.objectStore('restaurant');
+          restaurants.forEach(function(restaurant) {
+            store.put(restaurant);
+          });
+          return tx.complete;
+        });
+        return restaurants;
+      })
+      // let dbPromise = DBHelper.openDatabase();
+      // dbPromise.then(function(db) {
+      //   let tx = db.transaction('restaurants');
+      //   let restaurantStore = tx.objectStore('restaurant');
+      //   return restaurantStore.getAll();
+      // })
+      // .then(restaurants => callback(null, restaurants))
   }
 
   /**
@@ -163,7 +192,7 @@ class DBHelper {
   /**
    * Map marker for a restaurant.
    */
-   static mapMarkerForRestaurant(restaurant, map) {
+  static mapMarkerForRestaurant(restaurant, map) {
     // https://leafletjs.com/reference-1.3.0.html#marker  
     const marker = new L.marker([restaurant.latlng.lat, restaurant.latlng.lng],
       {title: restaurant.name,
@@ -175,4 +204,3 @@ class DBHelper {
   } 
 
 }
-
