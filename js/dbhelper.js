@@ -12,6 +12,15 @@ class DBHelper {
     return `http://localhost:${port}/restaurants`;
   }
 
+  static openDatabase() {
+    if (!navigator.serviceWorker) {
+      return Promise.resolve();
+    }
+    console.log('in openDatabase');
+    return idb.open('restaurant-db', 1, function(upgradeDB) {
+      let store = upgradeDB.createObjectStore('restaurant', { keyPath: 'id' });
+    })
+  }
   /**
    * Fetch all restaurants.
    */
