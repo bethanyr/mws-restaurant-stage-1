@@ -10,7 +10,6 @@ const filesToCache = [
   'dist/js/vendor/idb.js',
   '/',
   'restaurant.html'
-  
 ]
 
 self.addEventListener('install', function(event) {
@@ -33,33 +32,35 @@ self.addEventListener('fetch', function(event) {
 
 self.addEventListener('activate', function(event) {
   event.waitUntil(
-    createDB()
+    createDB().then(function(db) {
+      loadDB(db);
+    })
   );
 });
 
 function createDB() {
-  // put code to create restaurants db here
   return idb.open('restaurant-db', 1, function(upgradeDB) {
     switch (upgradeDB.oldVersion) {
       case 0:
 
       case 1:
-        console.log('here');
         let store = upgradeDB.createObjectStore('restaurants', { keyPath: 'id' });
         store.createIndex('by-neighborhood', 'neighborhood');
         store.createIndex('by-cuisine', 'cuisine_type');
     }
-    // load restaurant data into store
   })
 }
 
 function loadDB(dbPromise) {
-  dbPromise.then(function(dbPromise) {
-    let tx = db.transaction('restaurant', 'readwrite');
-    let store = tx.objectStore('restaurant');
+  const DATABASE_URL = 'http://localhost:1337/restaurants'
+  fetch(DATABASE_URL).then(function(response) {
+    return response.json();
+  }).then(function(restaurants) {
+    let tx = dbPromise.transaction('restaurants', 'readwrite');
+    let store = tx.objectStore('restaurants');
     restaurants.forEach(function(restaurant) {
       store.put(restaurant);
     });
     return tx.complete;
-  });
+  })
 }
