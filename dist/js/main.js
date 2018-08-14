@@ -12,17 +12,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
   initMap(); // added 
 });
 
-// window.addEventListener('dbReady', (event) => {
-//   initializePage();
-// });
-
-// navigator.serviceWorker.addEventListener('dbReady', (event) => {
-//   initializePage();
-// })
-
 navigator.serviceWorker.addEventListener('message', event => {
-  console.log('message listener', event.data);
-  initializePage();
+  if (event.data === 'dbReady') {
+    initializePage();
+  }
 });
 
 initializePage = () => {
@@ -30,10 +23,7 @@ initializePage = () => {
   updateRestaurants();
   fetchNeighborhoods();
   fetchCuisines();
-  console.log('in initializePage');
 }
-
-
 
 /**
  * Fetch all neighborhoods and set their HTML.
@@ -213,7 +203,6 @@ addMarkersToMap = (restaurants = self.restaurants) => {
 if (navigator.serviceWorker) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
-      console.log('ServiceWorker registration completed', registration);
       if (registration.active) {
         initializePage();
       }

@@ -38,7 +38,6 @@ class DBHelper {
     dbPromise.then(db => {
       return db.transaction('restaurants').objectStore('restaurants').get(parseInt(id));
     }).then(function(restaurant) {
-        console.log('restaurant', restaurant);
         callback(null, restaurant);
       }).catch(error => callback(error, null));
   }
