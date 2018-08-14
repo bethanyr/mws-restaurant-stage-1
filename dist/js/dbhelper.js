@@ -16,12 +16,11 @@ class DBHelper {
   static openDB() {
     return idb.open('restaurant-db');
   }
+
   /**
    * Fetch all restaurants.
    */
   static fetchRestaurants(callback) {
-    console.log('fetchRestaurants');
-    // let dbPromise = idb.open('restaurant-db');
     dbPromise.then(db => {
       return db.transaction('restaurants').objectStore('restaurants').getAll();
     }).then(function(restaurants) {
@@ -36,11 +35,7 @@ class DBHelper {
    * Fetch a restaurant by its ID.
    */
   static fetchRestaurantById(id, callback) {
-    // fetch all restaurants with proper error handling.
-    // let dbPromise = idb.open('restaurant-db');
     dbPromise.then(db => {
-      // return db.transaction('restaurants').objectStore('restaurants').getAll();
-      console.log('id', id);
       return db.transaction('restaurants').objectStore('restaurants').get(parseInt(id));
     }).then(function(restaurant) {
         console.log('restaurant', restaurant);
@@ -52,8 +47,6 @@ class DBHelper {
    * Fetch restaurants by a cuisine type with proper error handling.
    */
   static fetchRestaurantByCuisine(cuisine, callback) {
-    // Fetch all restaurants  with proper error handling
-    // let dbPromise = idb.open('restaurant-db');
     dbPromise.then(db => {
       let tx = db.transaction('restaurants')
       let store = tx.objectStore('restaurants')
@@ -67,7 +60,6 @@ class DBHelper {
    * Fetch restaurants by a neighborhood with proper error handling.
    */
   static fetchRestaurantByNeighborhood(neighborhood, callback) {
-    // let dbPromise = idb.open('restaurant-db');
     dbPromise.then(db => {
       let tx = db.transaction('restaurants')
       let store = tx.objectStore('restaurants')
@@ -145,8 +137,6 @@ class DBHelper {
    * Restaurant image URL.
    */
   static imageUrlForRestaurant(restaurant) {
-    
-    // return (`/dist/img/${restaurant.photograph}.jpg`);
     let imgName = (restaurant.photograph ? restaurant.photograph : restaurant.id)
     
     return { webp: `/dist/images/${imgName}.webp`,

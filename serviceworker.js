@@ -1,6 +1,7 @@
 self.importScripts('dist/js/vendor/idb.js');
 
 const staticCache = 'restaurant-cache-v1';
+const imgCache = 'restaurant-img-cache-v1';
 
 const filesToCache = [
   'dist/js/main.js',
@@ -21,6 +22,19 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
+  var requestUrl = new URL(event.request.url);
+
+  if (requestUrl.origin === location.origin) {
+    if (requestUrl.pathname.startsWith('/dist/images/')) {
+      event.respondWith(servePhoto(event.request));
+      return;
+    }
+    if (requestUrl.pathname.startsWith('/restaurant.html')) {
+      event.respondWith(caches.match('/restaurant.html'));
+      return;
+    }
+  }
+
   event.respondWith(
     caches.match(event.request).then(function(response) {
       return response || fetch(event.request);
@@ -37,7 +51,6 @@ self.addEventListener('activate', function(event) {
     }).then(function(db) {
       self.clients.claim();
       self.clients.matchAll().then(function(clients) {
-        console.log('clients', clients);
         clients.forEach(function(client) {
           client.postMessage('dbReady');
         })    
@@ -46,10 +59,23 @@ self.addEventListener('activate', function(event) {
   );
 });
 
+function servePhoto(request) {
+  var storageUrl = request.url.replace(/.jpg$|.webp$/, '');
+
+  return caches.open(imgCache).then(function(cache) {
+    return cache.match(storageUrl).then(function(response) {
+      if (response) return response;
+
+      return fetch(request).then(function(networkResponse) {
+        cache.put(storageUrl, networkResponse.clone());
+        return networkResponse;
+      });
+    });
+  });
+}
+
 function createDB() {
-  console.log('createdb');
   return idb.open('restaurant-db', 1, function(upgradeDB) {
-    console.log('old version', upgradeDB.oldVersion);
     switch (upgradeDB.oldVersion) {
       case 0:
         let store = upgradeDB.createObjectStore('restaurants', { keyPath: 'id' });
@@ -60,7 +86,6 @@ function createDB() {
 }
 
 function loadDB(db) {
-  console.log('loaddb');
   const DATABASE_URL = 'http://localhost:1337/restaurants'
   fetch(DATABASE_URL).then(function(response) {
     return response.json();

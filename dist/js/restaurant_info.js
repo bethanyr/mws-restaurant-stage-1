@@ -1,24 +1,12 @@
 let restaurant;
 var newMap;
 
-/**
- * Initialize map as soon as the page is loaded.
- */
-// document.addEventListener('DOMContentLoaded', (event) => {  
-//   initMap();
-// });
-
-/**
- * * have serviceWorker call initializePage 
- */
-
 initializePage = () => {
   dbPromise = DBHelper.openDB();
   initMap();
 }
 
 navigator.serviceWorker.addEventListener('message', event => {
-  console.log('message listener', event.data);
   initializePage();
 });
 
@@ -200,8 +188,9 @@ getParameterByName = (name, url) => {
 if (navigator.serviceWorker) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
-      console.log('ServiceWorker registration completed', registration);
       if (registration.active) {
+        // if serviceWorker has already been activated, a 'dbReady' event will
+        // not fire, so need to go ahead and initialize the page.
         initializePage();
       }
     }, function(e) {
