@@ -4,8 +4,22 @@ var newMap;
 /**
  * Initialize map as soon as the page is loaded.
  */
-document.addEventListener('DOMContentLoaded', (event) => {  
+// document.addEventListener('DOMContentLoaded', (event) => {  
+//   initMap();
+// });
+
+/**
+ * * have serviceWorker call initializePage 
+ */
+
+initializePage = () => {
+  dbPromise = DBHelper.openDB();
   initMap();
+}
+
+navigator.serviceWorker.addEventListener('message', event => {
+  console.log('message listener', event.data);
+  initializePage();
 });
 
 /**
@@ -178,4 +192,20 @@ getParameterByName = (name, url) => {
   if (!results[2])
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
+/**
+ * Setup ServiceWorker
+ */
+if (navigator.serviceWorker) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
+      console.log('ServiceWorker registration completed', registration);
+      if (registration.active) {
+        initializePage();
+      }
+    }, function(e) {
+      console.log('ServiceWorker registration failed, ', e);
+    });
+  });
 }

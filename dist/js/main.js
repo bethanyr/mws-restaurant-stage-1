@@ -1,17 +1,39 @@
 let restaurants,
   neighborhoods,
-  cuisines
-var newMap
-var markers = []
+  cuisines;
+var newMap;
+var markers = [];
+var dbPromise;
 
 /**
  * Fetch neighborhoods and cuisines as soon as the page is loaded.
  */
 document.addEventListener('DOMContentLoaded', (event) => {
   initMap(); // added 
+});
+
+// window.addEventListener('dbReady', (event) => {
+//   initializePage();
+// });
+
+// navigator.serviceWorker.addEventListener('dbReady', (event) => {
+//   initializePage();
+// })
+
+navigator.serviceWorker.addEventListener('message', event => {
+  console.log('message listener', event.data);
+  initializePage();
+});
+
+initializePage = () => {
+  dbPromise = DBHelper.openDB();
+  updateRestaurants();
   fetchNeighborhoods();
   fetchCuisines();
-});
+  console.log('in initializePage');
+}
+
+
 
 /**
  * Fetch all neighborhoods and set their HTML.
@@ -86,7 +108,6 @@ initMap = () => {
     id: 'mapbox.streets'
   }).addTo(newMap);
 
-  updateRestaurants();
 }
 
 /**
@@ -192,7 +213,10 @@ addMarkersToMap = (restaurants = self.restaurants) => {
 if (navigator.serviceWorker) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
-      console.log('ServiceWorker registration completed');
+      console.log('ServiceWorker registration completed', registration);
+      if (registration.active) {
+        initializePage();
+      }
     }, function(e) {
       console.log('ServiceWorker registration failed, ', e);
     });
