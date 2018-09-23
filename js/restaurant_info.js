@@ -45,6 +45,7 @@ fetchRestaurantFromURL = (callback) => {
     callback(null, self.restaurant)
     return;
   }
+  
   const id = getParameterByName('id');
   if (!id) { // no id found in URL
     error = 'No restaurant id in URL'
@@ -59,6 +60,17 @@ fetchRestaurantFromURL = (callback) => {
       fillRestaurantHTML();
       callback(null, restaurant)
     });
+  
+    DBHelper.fetchReviewsById(id, (error, reviews) => {
+      console.log('after fetch reviews', reviews);
+      self.restaurant.reviews = reviews;
+      if (!reviews) {
+        console.error(error);
+        return;
+      }
+      fillReviewsHTML();
+      callback(null, reviews)
+    });
   }
 }
 
@@ -68,6 +80,11 @@ fetchRestaurantFromURL = (callback) => {
 fillRestaurantHTML = (restaurant = self.restaurant) => {
   const name = document.getElementById('restaurant-name');
   name.innerHTML = restaurant.name;
+
+  const favorite = document.getElementById('favorite');
+  favorite.innerHTML = `Favorite: ${restaurant.is_favorite}`
+  
+  favorite.className = restaurant.is_favorite ? 'favorite active' : 'favorite inactive';
   
   const address = document.getElementById('restaurant-address');
   address.innerHTML = restaurant.address;
@@ -86,7 +103,7 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
     fillRestaurantHoursHTML();
   }
   // fill reviews
-  fillReviewsHTML();
+  // fillReviewsHTML();
 }
 
 /**
@@ -141,7 +158,7 @@ createReviewHTML = (review) => {
   li.appendChild(name);
 
   const date = document.createElement('p');
-  date.innerHTML = review.date;
+  date.innerHTML = DBHelper.reviewDate(review);
   li.appendChild(date);
 
   const rating = document.createElement('p');

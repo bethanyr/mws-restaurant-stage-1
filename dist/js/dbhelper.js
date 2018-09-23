@@ -37,11 +37,30 @@ class DBHelper {
   static fetchRestaurantById(id, callback) {
     dbPromise.then(db => {
       return db.transaction('restaurants').objectStore('restaurants').get(parseInt(id));
-    }).then(function(restaurant) {
-        callback(null, restaurant);
-      }).catch(error => callback(error, null));
+    }).then(restaurant => callback(null, restaurant))
+    .catch(error => callback(error, null));
   }
 
+  /**
+   * Fetch reviews for a restaurant by restaurant ID.
+   */
+  static fetchReviewsById(restaurantId, callback) {
+    console.log('fetchreviews', restaurantId);
+    if (!restaurantId) {
+      return
+    }
+    dbPromise.then(db => {
+      let tx = db.transaction('reviews')
+      let store = tx.objectStore('reviews')
+      let index = store.index('by-restaurant-id');
+      return index.getAll(parseInt(restaurantId));
+      // return index.get(parseInt(restaurantId));
+    }).then(reviews => {
+      console.log('list of reviews', reviews);
+      callback(null, reviews);
+    })
+    .catch(error => callback(error, null));
+  }
   /**
    * Fetch restaurants by a cuisine type with proper error handling.
    */
@@ -126,6 +145,28 @@ class DBHelper {
   }
 
   /**
+   *  Update Favorite flag for restaurant
+   */
+  static updateFavorite(restaurantId, isFavorite) {
+    // https://developer.mozilla.org/en-US/docs/Web/API/Request
+    // make fetch call to update restaurant data on server
+    // in cache - look at the fetch call - and 
+    // 1. update indexeddb with the value
+    // 2. if online - make call to server, if offline, add it to the offline transactions db
+    // 
+    let updateRequest = new Request(`http://localhost:1337/restaurants/${restaurantId}/?is_favorite=${isFavorite}`, {method: 'PUT'});
+    fetch(updateRequest)
+      .then(response => {
+        if (response.status === 200) {
+          return;
+        } else
+          throw new Error('Unable to update Favorite');
+      }).catch(error => {
+        console.error('An error occured adding the restaurant to Favorite', error);
+      })
+  }
+
+  /**
    * Restaurant page URL.
    */
   static urlForRestaurant(restaurant) {
@@ -148,6 +189,15 @@ class DBHelper {
    */
   static imageAltTextForRestaurant(restaurant) {
     return (`Picture of ${restaurant.name} restaurant`);
+  }
+
+  /**
+   * Formatted Review date
+   */
+
+  static reviewDate(review) {
+    let rDate = new Date(review.updatedAt);
+    return (rDate.toDateString());
   }
 
   /**

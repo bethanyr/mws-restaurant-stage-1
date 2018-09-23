@@ -232,6 +232,20 @@ nav h1 a {
   text-transform: uppercase;
 }
 
+#restaurants-list li a.favorite {
+  background-color: white;
+  border: none;
+  display: inline;
+  font-size: 45px;
+}
+
+#restaurants-list li a.favorite::after {
+  content: "♡"
+}
+
+#restaurants-list li a.favorite.active::after {
+  content: "❤️"
+}
 /* ====================== Restaurant Details ====================== */
 .inside header {
   position: relative;

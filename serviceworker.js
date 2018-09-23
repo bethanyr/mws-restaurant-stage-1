@@ -42,6 +42,11 @@ self.addEventListener('fetch', function(event) {
       console.log('An error occured fetching cache', e);
     })
   );
+
+  // check the URLs for the api calls to the server
+  // to update the favorites --> update the indexeddb version of the restaurant
+  // and if it's offline then add the record to a store of updatest that need to happen to the 
+  // server
 });
 
 self.addEventListener('activate', function(event) {
@@ -75,19 +80,27 @@ function servePhoto(request) {
 }
 
 function createDB() {
-  return idb.open('restaurant-db', 1, function(upgradeDB) {
+  return idb.open('restaurant-db', 2, function(upgradeDB) {
     switch (upgradeDB.oldVersion) {
       case 0:
         let store = upgradeDB.createObjectStore('restaurants', { keyPath: 'id' });
         store.createIndex('by-neighborhood', 'neighborhood');
         store.createIndex('by-cuisine', 'cuisine_type');
+      case 1:
+        let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id'});
+        reviewStore.createIndex('by-restaurant-id', 'restaurant_id');
     }
   })
 }
 
 function loadDB(db) {
-  const DATABASE_URL = 'http://localhost:1337/restaurants'
-  fetch(DATABASE_URL).then(function(response) {
+  loadRestaurants(db);
+  loadReviews(db);
+}
+
+function loadRestaurants(db) {
+  const RESTAURANTS_URL = 'http://localhost:1337/restaurants'
+  fetch(RESTAURANTS_URL).then(function(response) {
     return response.json();
   }).then(function(restaurants) {
       let tx = db.transaction('restaurants', 'readwrite');
@@ -98,5 +111,21 @@ function loadDB(db) {
       return tx.complete;
   }).catch(function(err) {
     console.log('unable to fetch restaurants', err)
+  })
+}
+
+function loadReviews(db) {
+  const REVIEWS_URL = 'http://localhost:1337/reviews'
+  fetch(REVIEWS_URL).then(function(response) {
+    return response.json();
+  }).then(function(reviews) {
+      let tx = db.transaction('reviews', 'readwrite');
+      let store = tx.objectStore('reviews');
+      reviews.forEach(function(review) {
+        store.put(review);
+      });
+      return tx.complete;
+  }).catch(function(err) {
+    console.log('unable to fetch reviews', err)
   })
 }
