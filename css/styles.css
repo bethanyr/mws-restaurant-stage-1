@@ -252,7 +252,20 @@ nav h1 a {
   width: 100%;
   z-index: 1000;
 }
+#restaurant-container a.favorite {
+  background-color: white;
+  border: none;
+  display: inline;
+  font-size: 45px;
+}
 
+#restaurant-container a.favorite::after {
+  content: "♡"
+}
+
+#restaurant-container a.favorite.active::after {
+  content: "❤️"
+}
 .inside #maincontent {
   display: flex;
   flex-wrap: wrap;

@@ -82,9 +82,22 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   name.innerHTML = restaurant.name;
 
   const favorite = document.getElementById('favorite');
-  favorite.innerHTML = `Favorite: ${restaurant.is_favorite}`
-  
-  favorite.className = restaurant.is_favorite ? 'favorite active' : 'favorite inactive';
+  favorite.innerHTML = "Favorite"
+  favorite.role="button"
+  favorite.setAttribute('aria-pressed', restaurant.is_favorite);
+  favorite.className = restaurant.is_favorite.toString() === "true" ? 'favorite active' : 'favorite';
+  favorite.setAttribute('data-restaurant-id', restaurant.id);
+  favorite.setAttribute('data-favorite', restaurant.is_favorite);
+  favorite.addEventListener('click', function(event) {
+    restaurantId = event.target.getAttribute('data-restaurant-id');
+    isFavorite = event.target.getAttribute('data-favorite');
+    // set the updateFavorite to the opposite value of isFavorite
+    let updateFavorite = (isFavorite.toString() === "true") ? "false" : "true";
+    event.target.setAttribute('data-favorite', updateFavorite);
+    event.target.classList.toggle('active');
+    event.target.setAttribute('aria-pressed', updateFavorite);
+    DBHelper.updateFavorite(restaurantId, updateFavorite);
+  });
   
   const address = document.getElementById('restaurant-address');
   address.innerHTML = restaurant.address;

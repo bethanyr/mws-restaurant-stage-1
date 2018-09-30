@@ -41,6 +41,9 @@ class DBHelper {
     .catch(error => callback(error, null));
   }
 
+  static updateRestaurantById(id, update) {
+    
+  }
   /**
    * Fetch reviews for a restaurant by restaurant ID.
    */
@@ -144,6 +147,30 @@ class DBHelper {
     });
   }
 
+  /**
+   * Add New Restaurant Review
+   */
+  static addRestaurantReview(review) {
+    // {
+  //   "restaurant_id": <restaurant_id>,
+  //   "name": <reviewer_name>,
+  //   "rating": <rating>,
+  //   "comments": <comment_text>
+  // }
+
+    let reviewRequest = new Request(`http://localhost:1337/reviews`, {method: 'POST'});
+    fetch(reviewRequest)
+      .then(response => {
+        if (response.status === 200) {
+          return;
+        } else
+          throw new Error('Unable to add new Review');
+      }).catch(error => {
+        console.error('An error occured adding a new restaurant review', error);
+      })
+  }
+
+  
   /**
    *  Update Favorite flag for restaurant
    */

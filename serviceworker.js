@@ -34,6 +34,33 @@ self.addEventListener('fetch', function(event) {
       return;
     }
   }
+  console.log('event request', requestUrl);
+  // for api calls, if offline then store a copy of the update to 
+  // run the next time connected to server
+  if (requestUrl.origin === 'http://localhost:1337') {
+    console.log('in here');
+    if (event.request.method === 'PUT' &&  requestUrl.pathname.startsWith('/restaurants')) {
+      let id = requestUrl.pathname.split('/')[2]
+      console.log('event request match', event);
+      fetch(event.response).then(function(response) {
+        let dbPromise = idb.open('restaurant-db');
+        dbPromise.then(db => {
+          return db.transaction('restaurants').objectStore('restaurants').get(parseInt(id))
+        }).then(restaurant => {
+          console.log('restaurant info before', restaurant);
+          restaurant["is_favorite"] = restaurant["is_favorite"].toString() === "true" ? "false" : "true";
+          dbPromise.then(db => {
+            db.transaction('restaurants', 'readwrite').objectStore('restaurants').put(restaurant);
+          })
+        })
+      }).catch(function(error) {
+        //store in offline transaction store
+        // let url = e.request;
+        console.log('in error section, is it because offline', error);
+
+      });
+    }
+  }
 
   event.respondWith(
     caches.match(event.request).then(function(response) {
@@ -89,6 +116,7 @@ function createDB() {
       case 1:
         let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id'});
         reviewStore.createIndex('by-restaurant-id', 'restaurant_id');
+        let updateStore = upgradeDB.createObjectStore('offlineUpdates');
     }
   })
 }
