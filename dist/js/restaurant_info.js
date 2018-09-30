@@ -271,23 +271,23 @@ setupModal = () => {
   const reviewBtn = document.getElementById('review-btn');
   const cancelBtn = document.getElementById('cancel-review');
   let focusedElementBeforeModal;
+  let firstTabStop;
+  let lastTabStop;
   
   reviewBtn.addEventListener('click', function(event) {
     focusedElementBeforeModal = document.activeElement;
     modal.style.display = "block";
     modal.addEventListener('keydown', trapKey);
+    let focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+    let focusableElements = modal.querySelectorAll(focusableElementsString);
+    // Convert NodeList to Array
+    focusableElements = Array.prototype.slice.call(focusableElements);
+
+    firstTabStop = focusableElements[0];
+    lastTabStop = focusableElements[focusableElements.length - 1];
+
+    firstTabStop.focus();
   });
-
-  let focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
-  let focusableElements = modal.querySelectorAll(focusableElementsString);
-  // Convert NodeList to Array
-  focusableElements = Array.prototype.slice.call(focusableElements);
-
-
-  let firstTabStop = focusableElements[0];
-  let lastTabStop = focusableElements[focusableElements.length - 1];
-
-  firstTabStop.focus();
 
   trapKey = (e) => {
     // Check for TAB key press
