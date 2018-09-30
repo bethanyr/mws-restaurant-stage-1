@@ -236,6 +236,9 @@ if (navigator.serviceWorker) {
             updatedAt: Date.now()
           }
           DBHelper.saveRestaurantReview(review);
+          if (!navigator.onLine) {
+            alert('You are not connected to the network. Your review will be submitted the next time you are connected to th network.');
+          }
           addNewReviewHtml(review);
           modal.style.display = "none";
           return registration.sync.register('review');

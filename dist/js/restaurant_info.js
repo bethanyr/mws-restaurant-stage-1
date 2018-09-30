@@ -236,6 +236,9 @@ if (navigator.serviceWorker) {
             updatedAt: Date.now()
           }
           DBHelper.saveRestaurantReview(review);
+          if (!navigator.onLine) {
+            alert('You are not connected to the network. Your review will be submitted the next time you are connected to th network.');
+          }
           addNewReviewHtml(review);
           modal.style.display = "none";
           return registration.sync.register('review');
@@ -260,8 +263,9 @@ if (navigator.serviceWorker) {
 }
 
 setupModal = () => {
-  //modal code based off of: https://www.w3schools.com/howto/howto_css_modals.asp
-  // and udacity lesson 11: focus (modals and keyboard traps)
+  // modal code based off of: https://www.w3schools.com/howto/howto_css_modals.asp
+  // and udacity accessibility lesson 11: focus (modals and keyboard traps)
+  // (from Udacity unit 2. Accessible & Responsive Web Apps)
 
   const modal = document.getElementById('review-modal');
   const reviewBtn = document.getElementById('review-btn');
@@ -278,11 +282,11 @@ setupModal = () => {
   let focusableElements = modal.querySelectorAll(focusableElementsString);
   // Convert NodeList to Array
   focusableElements = Array.prototype.slice.call(focusableElements);
-  console.log(focusableElements);
+
 
   let firstTabStop = focusableElements[0];
   let lastTabStop = focusableElements[focusableElements.length - 1];
-  console.log(firstTabStop);
+
   firstTabStop.focus();
 
   trapKey = (e) => {
@@ -312,9 +316,6 @@ setupModal = () => {
 
     }
   }
-
-  // FIXME: hide non-modal content from screen readers
-  // mainContent.style.visibility = "hidden";
 
   cancelBtn.addEventListener('click', function(event) {
     modal.style.display = "none";
