@@ -295,6 +295,10 @@ nav h1 a {
   margin: 15px 0 30px;
   text-transform: uppercase;
   line-height: 1.1;
+  display: inline-block;
+}
+#restaurant-header {
+  display: block;
 }
 #restaurant-img {
 	width: 90%;
@@ -343,10 +347,7 @@ nav h1 a {
   text-decoration: none;
   text-transform: uppercase;
 }
-#reviews-container .review input {
-  font-size: 10pt;
-  display: inline-block;
-}
+
 #reviews-list {
   margin: 0;
   padding: 0;
@@ -367,6 +368,57 @@ nav h1 a {
 }
 #restaurant-hours td {
   color: #666;
+}
+
+.review-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,.4);
+}
+
+.review-form {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid orange;
+  width: 300px;
+}
+
+.review-form input {
+  font-size: 15px;
+  display: inline-block;
+}
+
+.review-form select {
+  font-size: 15px;
+  display: inline-block;
+}
+
+.review-form textarea {
+  font-size: 15px;
+  border: 1px solid orange;
+}
+
+.review-form a {
+  background-color: orange;
+  border-bottom: 3px solid #eee;
+  color: #333;
+  display: inline-block;
+  font-size: 10pt;
+  margin: 15px;
+  padding: 8px 30px 10px;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.review-form div {
+  display: block;
+  margin: 10px;
 }
 
 @media screen and (min-width: 800px) {

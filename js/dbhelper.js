@@ -48,7 +48,6 @@ class DBHelper {
    * Fetch reviews for a restaurant by restaurant ID.
    */
   static fetchReviewsById(restaurantId, callback) {
-    console.log('fetchreviews', restaurantId);
     if (!restaurantId) {
       return
     }
@@ -59,7 +58,6 @@ class DBHelper {
       return index.getAll(parseInt(restaurantId));
       // return index.get(parseInt(restaurantId));
     }).then(reviews => {
-      console.log('list of reviews', reviews);
       callback(null, reviews);
     })
     .catch(error => callback(error, null));
@@ -150,37 +148,76 @@ class DBHelper {
   /**
    * Add New Restaurant Review
    */
-  static addRestaurantReview(review) {
-    // {
-  //   "restaurant_id": <restaurant_id>,
-  //   "name": <reviewer_name>,
-  //   "rating": <rating>,
-  //   "comments": <comment_text>
-  // }
+  static saveRestaurantReview(review) {
+    dbPromise.then(db => {
+      let tx =  db.transaction('reviews', 'readwrite');
+      tx.objectStore('reviews').put(review);
+      return tx.complete;
+    })
+    // store a copy in the offline db to be synced by serviceworker  
+    dbPromise.then(db => {
+      let tx = db.transaction('offlineUpdates', 'readwrite');
+      tx.objectStore('offlineUpdates').put({
+        createdAt: (new Date).getTime(),
+        type: 'addReview',
+        data: review
+      })
+      return tx.complete;
+    })   
+  }
 
-    let reviewRequest = new Request(`http://localhost:1337/reviews`, {method: 'POST'});
-    fetch(reviewRequest)
-      .then(response => {
-        if (response.status === 200) {
+  static sendRestaurantReview(review) {
+    const reviewUrl = "http://localhost:1337/reviews";
+    fetch(reviewUrl, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify(review),
+    }).then(response => {
+      if (response.status === 201) {
           return;
         } else
           throw new Error('Unable to add new Review');
-      }).catch(error => {
+    }).catch(error => {
         console.error('An error occured adding a new restaurant review', error);
-      })
+    })
   }
-
   
   /**
    *  Update Favorite flag for restaurant
    */
-  static updateFavorite(restaurantId, isFavorite) {
-    // https://developer.mozilla.org/en-US/docs/Web/API/Request
-    // make fetch call to update restaurant data on server
-    // in cache - look at the fetch call - and 
-    // 1. update indexeddb with the value
-    // 2. if online - make call to server, if offline, add it to the offline transactions db
-    // 
+  static updateFavorite(restaurantId, isFavorite) {    
+    // update indexedDb copy with favorite data
+    dbPromise.then(db => {
+      return db.transaction('restaurants').objectStore('restaurants').get(parseInt(restaurantId))
+    }).then(restaurant => {
+      restaurant["is_favorite"] = restaurant["is_favorite"].toString() === "true" ? "false" : "true";
+      dbPromise.then(db => {
+        let tx = db.transaction('restaurants', 'readwrite')
+        tx.objectStore('restaurants').put(restaurant);
+        return tx.complete;
+      })
+    })
+    // add a copy to the offlineUpdates indexeddb store
+    // if the serviceworker is online it will sync this data,
+    // otherwise it will sync data next time it is online, using background sync   
+    dbPromise.then(db => {
+      let tx = db.transaction('offlineUpdates', 'readwrite');
+      tx.objectStore('offlineUpdates').put({
+        createdAt: (new Date).getTime(),
+        type: 'updateRestaurant',
+        data: {
+          restaurantId: restaurantId,
+          isFavorite: isFavorite
+        }
+      })
+      return tx.complete;
+    })  
+  }
+
+  static sendFavorite(restaurantId, isFavorite) {
     let updateRequest = new Request(`http://localhost:1337/restaurants/${restaurantId}/?is_favorite=${isFavorite}`, {method: 'PUT'});
     fetch(updateRequest)
       .then(response => {
@@ -192,7 +229,6 @@ class DBHelper {
         console.error('An error occured adding the restaurant to Favorite', error);
       })
   }
-
   /**
    * Restaurant page URL.
    */
@@ -241,5 +277,30 @@ class DBHelper {
     return marker;
   } 
 
+  static syncOffline() {
+    let dbProm = DBHelper.openDB();
+    dbProm.then(db => {
+      let tx = db.transaction('offlineUpdates', 'readwrite');
+      let offlineStore = tx.objectStore('offlineUpdates');
+      let updateFavoriteUrl;
+    
+      offlineStore.openCursor().then(function syncTransaction(cursor) {
+        if (!cursor) return;
+        let updateRequest;
+        let data = cursor.value.data;
+        if (cursor.value.type === 'updateRestaurant') {
+          DBHelper.sendFavorite(data.restaurantId, data.isFavorite);
+        }
+        if (cursor.value.type === 'addReview') {
+          DBHelper.sendRestaurantReview(data);
+        }
+        cursor.delete();
+        return cursor.continue().then(syncTransaction);
+      }).then(() => {
+        console.log('finished with updates');
+      })
+    })
+  }
+  
 }
 

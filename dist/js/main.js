@@ -187,16 +187,6 @@ createRestaurantHTML = (restaurant) => {
   favorite.className = restaurant.is_favorite.toString() === "true" ? 'favorite active' : 'favorite';
   favorite.setAttribute('data-restaurant-id', restaurant.id);
   favorite.setAttribute('data-favorite', restaurant.is_favorite.toString());
-  favorite.addEventListener('click', function(event) {
-    restaurantId = event.target.getAttribute('data-restaurant-id');
-    isFavorite = event.target.getAttribute('data-favorite');
-    // set the updateFavorite to the opposite value of isFavorite
-    let updateFavorite = (isFavorite.toString() === "true") ? "false" : "true";
-    event.target.setAttribute('data-favorite', updateFavorite);
-    event.target.classList.toggle('active');
-    event.target.setAttribute('aria-pressed', updateFavorite);
-    DBHelper.updateFavorite(restaurantId, updateFavorite);
-  });
   li.append(favorite);
   return li
 }
@@ -216,10 +206,6 @@ addMarkersToMap = (restaurants = self.restaurants) => {
   });
 } 
 
-favoriteSvg = () => {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-255 459 144 144"><circle fill="#3F51B5" cx="-183" cy="531" r="72"/><path fill="#FFF" d="M-199.3 585.2c-1.6 0-3.3-.7-4.5-2-2.3-2.4-2.2-6.4.3-8.7l25-23.5c1-1 2.7-1.7 4.2-1.7h15c4.6 0 8.5-4 8.5-8.6v-32.2c0-4.8-4-8.7-8.6-8.7h-47c-5 0-8.8 4-8.8 8.7v32.2c0 4.8 3.7 8.6 8.5 8.6h5c3.4 0 6 2.8 6 6.2 0 3.4-2.6 6.2-6 6.2h-5c-11.5 0-21-9.4-21-21v-32.2c0-11.6 9.6-21 21.3-21h47c11.6 0 21 9.4 21 21v32.2c0 11.6-9.4 21-21 21h-12.4l-23.3 21.8c-1.2 1-2.8 1.7-4.3 1.7z"/></svg>`
-}
-
 /**
  * Setup ServiceWorker
  */
@@ -228,6 +214,20 @@ if (navigator.serviceWorker) {
     navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
       if (registration.active) {
         initializePage();
+      }
+      if (registration.sync) { 
+        document.addEventListener('click', function(event) {
+          restaurantId = event.target.getAttribute('data-restaurant-id');
+          isFavorite = event.target.getAttribute('data-favorite');
+          if (!isFavorite) return;
+          // set the updateFavorite to the opposite value of isFavorite
+          let updateFavorite = (isFavorite.toString() === "true") ? "false" : "true";
+          event.target.setAttribute('data-favorite', updateFavorite);
+          event.target.classList.toggle('active');
+          event.target.setAttribute('aria-pressed', updateFavorite);
+          DBHelper.updateFavorite(restaurantId, updateFavorite);
+          return registration.sync.register('favorite');
+        });
       }
     }, function(e) {
       console.log('ServiceWorker registration failed, ', e);

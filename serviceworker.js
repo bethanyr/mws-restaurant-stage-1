@@ -1,4 +1,5 @@
 self.importScripts('dist/js/vendor/idb.js');
+self.importScripts('dist/js/dbhelper.js');
 
 const staticCache = 'restaurant-cache-v1';
 const imgCache = 'restaurant-img-cache-v1';
@@ -34,47 +35,7 @@ self.addEventListener('fetch', function(event) {
       return;
     }
   }
-  console.log('event request', requestUrl);
-  // for api calls, if offline then store a copy of the update to 
-  // run the next time connected to server
-  if (requestUrl.origin === 'http://localhost:1337') {
-    console.log('in here');
-    let requestMethod = event.request.method;
-    if (requestMethod === 'PUT' &&  requestUrl.pathname.startsWith('/restaurants')) {
-      let id = requestUrl.pathname.split('/')[2]
-      console.log('event request match', event);
-      
-        let dbPromise = idb.open('restaurant-db');
-        dbPromise.then(db => {
-          return db.transaction('restaurants').objectStore('restaurants').get(parseInt(id))
-        }).then(restaurant => {
-          console.log('restaurant info before', restaurant);
-          restaurant["is_favorite"] = restaurant["is_favorite"].toString() === "true" ? "false" : "true";
-          dbPromise.then(db => {
-            let tx = db.transaction('restaurants', 'readwrite')
-            tx.objectStore('restaurants').put(restaurant);
-            return tx.complete;
-          })
-        })
-      fetch(event.response).then(function(response) {
-        console.log('attempted the request');
-      }).catch(function(error) {
-        //store in offline transaction store
-        // let url = e.request;
-        
-        dbPromise.then(db => {
-          let tx = db.transaction('offlineUpdates', 'readwrite');
-          tx.objectStore('offlineUpdates').put({
-            method: requestMethod, 
-            requestUrl: requestUrl.href,
-            createdAt: (new Date).getTime(),
-            type: 'updateRestaurant'
-          })
-          return tx.complete;
-        })
-      });
-    }
-  }
+
 
   event.respondWith(
     caches.match(event.request).then(function(response) {
@@ -105,6 +66,13 @@ self.addEventListener('activate', function(event) {
   );
 });
 
+self.addEventListener('sync', (event) => {
+  event.waitUntil(
+    // sync up items
+    DBHelper.syncOffline()
+  );
+})
+
 function servePhoto(request) {
   var storageUrl = request.url.replace(/.jpg$|.webp$/, '');
 
@@ -128,7 +96,7 @@ function createDB() {
         store.createIndex('by-neighborhood', 'neighborhood');
         store.createIndex('by-cuisine', 'cuisine_type');
       case 1:  
-        let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id'});
+        let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id', autoIncrement: true});
         reviewStore.createIndex('by-restaurant-id', 'restaurant_id');
         upgradeDB.createObjectStore('offlineUpdates', {keyPath: 'createdAt'});
     }
@@ -138,34 +106,6 @@ function createDB() {
 function loadDB(db) {
   loadRestaurants(db);
   loadReviews(db);
-  syncOffline(db);
-}
-
-function syncOffline(db) {
-  // open cursor
-  // loop through each item, and perform update
-  // and then delete the item if it was successful
-  let tx = db.transaction('offlineUpdates', 'readwrite');
-  let offlineStore = tx.objectStore('offlineUpdates');
-
-  offlineStore.openCursor().then(function syncTransaction(cursor) {
-    if (!cursor) return;
-    console.log("cursored at: ", cursor.value);
-    let updateRequest = new Request(cursor.value.requestUrl, {method: cursor.value.method});
-    fetch(updateRequest)
-      .then(response => {
-        if (response.status === 200) {
-          return;
-        } else
-          throw new Error('Unable to update');
-      }).catch(error => {
-        console.error('An error occured updating', error);
-      })
-    cursor.delete();
-    return cursor.continue().then(syncTransaction);
-  }).then(() => {
-    console.log('finished with updates');
-  })
 }
 
 function loadRestaurants(db) {

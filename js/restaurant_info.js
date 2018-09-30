@@ -62,10 +62,8 @@ fetchRestaurantFromURL = (callback) => {
     });
   
     DBHelper.fetchReviewsById(id, (error, reviews) => {
-      console.log('after fetch reviews', reviews);
       self.restaurant.reviews = reviews;
       if (!reviews) {
-        console.error(error);
         return;
       }
       fillReviewsHTML();
@@ -88,16 +86,6 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   favorite.className = restaurant.is_favorite.toString() === "true" ? 'favorite active' : 'favorite';
   favorite.setAttribute('data-restaurant-id', restaurant.id);
   favorite.setAttribute('data-favorite', restaurant.is_favorite);
-  favorite.addEventListener('click', function(event) {
-    restaurantId = event.target.getAttribute('data-restaurant-id');
-    isFavorite = event.target.getAttribute('data-favorite');
-    // set the updateFavorite to the opposite value of isFavorite
-    let updateFavorite = (isFavorite.toString() === "true") ? "false" : "true";
-    event.target.setAttribute('data-favorite', updateFavorite);
-    event.target.classList.toggle('active');
-    event.target.setAttribute('aria-pressed', updateFavorite);
-    DBHelper.updateFavorite(restaurantId, updateFavorite);
-  });
   
   const address = document.getElementById('restaurant-address');
   address.innerHTML = restaurant.address;
@@ -115,8 +103,6 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   if (restaurant.operating_hours) {
     fillRestaurantHoursHTML();
   }
-  // fill reviews
-  // fillReviewsHTML();
 }
 
 /**
@@ -159,12 +145,17 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
     ul.appendChild(createReviewHTML(review));
   });
   container.appendChild(ul);
-  const reviewBtn = document.getElementById('review-btn');
-  
-  reviewBtn.addEventListener('click', function(event) {
-    alert('review button clicked');
-  });
+  setupModal();
 }
+
+/**
+ * Add new review to HTML on the webpage
+ */
+
+ addNewReviewHtml = (review) => {
+  const ul = document.getElementById('reviews-list');
+  ul.appendChild(createReviewHTML(review));
+ }
 
 /**
  * Create review HTML and add it to the webpage.
@@ -228,8 +219,111 @@ if (navigator.serviceWorker) {
         // not fire, so need to go ahead and initialize the page.
         initializePage();
       }
+      if (registration.sync) {  
+        const modal = document.getElementById('review-modal');
+        const saveBtn = document.getElementById('save-review');
+        saveBtn.addEventListener('click', function(event) {
+          let name = document.getElementById('name').value;
+          let rating = document.getElementById('rating').selectedIndex;
+          let comments = document.getElementById('comment').value;
+          let restaurant_id = getParameterByName('id');
+          let review = {
+            restaurant_id: parseInt(restaurant_id),
+            name: name,
+            createdAt: Date.now(),
+            rating: rating,
+            comments: comments,
+            updatedAt: Date.now()
+          }
+          DBHelper.saveRestaurantReview(review);
+          addNewReviewHtml(review);
+          modal.style.display = "none";
+          return registration.sync.register('review');
+        });
+        const favorite = document.getElementById('favorite');
+        favorite.addEventListener('click', function(event) {
+          restaurantId = event.target.getAttribute('data-restaurant-id');
+          isFavorite = event.target.getAttribute('data-favorite');
+          // set the updateFavorite to the opposite value of isFavorite
+          let updateFavorite = (isFavorite.toString() === "true") ? "false" : "true";
+          event.target.setAttribute('data-favorite', updateFavorite);
+          event.target.classList.toggle('active');
+          event.target.setAttribute('aria-pressed', updateFavorite);
+          DBHelper.updateFavorite(restaurantId, updateFavorite);
+          return registration.sync.register('favorite');
+        });
+      }
     }, function(e) {
       console.log('ServiceWorker registration failed, ', e);
     });
   });
+}
+
+setupModal = () => {
+  // modal code based off of: https://www.w3schools.com/howto/howto_css_modals.asp
+  // and udacity accessibility lesson 11: focus (modals and keyboard traps)
+  // (from Udacity unit 2. Accessible & Responsive Web Apps)
+
+  const modal = document.getElementById('review-modal');
+  const reviewBtn = document.getElementById('review-btn');
+  const cancelBtn = document.getElementById('cancel-review');
+  let focusedElementBeforeModal;
+  
+  reviewBtn.addEventListener('click', function(event) {
+    focusedElementBeforeModal = document.activeElement;
+    modal.style.display = "block";
+    modal.addEventListener('keydown', trapKey);
+  });
+
+  let focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+  let focusableElements = modal.querySelectorAll(focusableElementsString);
+  // Convert NodeList to Array
+  focusableElements = Array.prototype.slice.call(focusableElements);
+
+
+  let firstTabStop = focusableElements[0];
+  let lastTabStop = focusableElements[focusableElements.length - 1];
+
+  firstTabStop.focus();
+
+  trapKey = (e) => {
+    // Check for TAB key press
+    if (e.keyCode === 9) {
+
+      // SHIFT + TAB
+      if (e.shiftKey) {
+        if (document.activeElement === firstTabStop) {
+          e.preventDefault();
+          lastTabStop.focus();
+        }
+
+      // TAB
+      } else {
+        if (document.activeElement === lastTabStop) {
+          e.preventDefault();
+          firstTabStop.focus();
+        }
+      }
+    }
+
+    // ESCAPE
+    if (e.keyCode === 27) {
+      modal.style.display = "none";
+      focusedElementBeforeModal.focus();
+
+    }
+  }
+
+  cancelBtn.addEventListener('click', function(event) {
+    modal.style.display = "none";
+    focusedElementBeforeModal.focus();
+  });
+
+  window.addEventListener('click', function(event) {
+    if (event.target === modal) {
+      modal.style.display = "none";
+      focusedElementBeforeModal.focus();
+    }
+  })
+
 }
