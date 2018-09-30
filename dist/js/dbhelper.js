@@ -41,9 +41,6 @@ class DBHelper {
     .catch(error => callback(error, null));
   }
 
-  static updateRestaurantById(id, update) {
-    
-  }
   /**
    * Fetch reviews for a restaurant by restaurant ID.
    */
