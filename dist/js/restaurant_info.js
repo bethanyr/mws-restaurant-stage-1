@@ -45,6 +45,7 @@ fetchRestaurantFromURL = (callback) => {
     callback(null, self.restaurant)
     return;
   }
+  
   const id = getParameterByName('id');
   if (!id) { // no id found in URL
     error = 'No restaurant id in URL'
@@ -59,6 +60,15 @@ fetchRestaurantFromURL = (callback) => {
       fillRestaurantHTML();
       callback(null, restaurant)
     });
+  
+    DBHelper.fetchReviewsById(id, (error, reviews) => {
+      self.restaurant.reviews = reviews;
+      if (!reviews) {
+        return;
+      }
+      fillReviewsHTML();
+      callback(null, reviews)
+    });
   }
 }
 
@@ -68,6 +78,14 @@ fetchRestaurantFromURL = (callback) => {
 fillRestaurantHTML = (restaurant = self.restaurant) => {
   const name = document.getElementById('restaurant-name');
   name.innerHTML = restaurant.name;
+
+  const favorite = document.getElementById('favorite');
+  favorite.innerHTML = ""
+  favorite.role="button"
+  favorite.setAttribute('aria-pressed', restaurant.is_favorite);
+  favorite.className = restaurant.is_favorite.toString() === "true" ? 'favorite active' : 'favorite';
+  favorite.setAttribute('data-restaurant-id', restaurant.id);
+  favorite.setAttribute('data-favorite', restaurant.is_favorite);
   
   const address = document.getElementById('restaurant-address');
   address.innerHTML = restaurant.address;
@@ -85,8 +103,6 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   if (restaurant.operating_hours) {
     fillRestaurantHoursHTML();
   }
-  // fill reviews
-  fillReviewsHTML();
 }
 
 /**
@@ -129,7 +145,17 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
     ul.appendChild(createReviewHTML(review));
   });
   container.appendChild(ul);
+  setupModal();
 }
+
+/**
+ * Add new review to HTML on the webpage
+ */
+
+ addNewReviewHtml = (review) => {
+  const ul = document.getElementById('reviews-list');
+  ul.appendChild(createReviewHTML(review));
+ }
 
 /**
  * Create review HTML and add it to the webpage.
@@ -141,7 +167,7 @@ createReviewHTML = (review) => {
   li.appendChild(name);
 
   const date = document.createElement('p');
-  date.innerHTML = review.date;
+  date.innerHTML = DBHelper.reviewDate(review);
   li.appendChild(date);
 
   const rating = document.createElement('p');
@@ -193,8 +219,114 @@ if (navigator.serviceWorker) {
         // not fire, so need to go ahead and initialize the page.
         initializePage();
       }
+      if (registration.sync) {  
+        const modal = document.getElementById('review-modal');
+        const saveBtn = document.getElementById('save-review');
+        saveBtn.addEventListener('click', function(event) {
+          let name = document.getElementById('name').value;
+          let rating = document.getElementById('rating').selectedIndex;
+          let comments = document.getElementById('comment').value;
+          let restaurant_id = getParameterByName('id');
+          let review = {
+            restaurant_id: parseInt(restaurant_id),
+            name: name,
+            createdAt: Date.now(),
+            rating: rating,
+            comments: comments,
+            updatedAt: Date.now()
+          }
+          DBHelper.saveRestaurantReview(review);
+          if (!navigator.onLine) {
+            alert('You are not connected to the network. Your review will be submitted the next time you are connected to th network.');
+          }
+          addNewReviewHtml(review);
+          modal.style.display = "none";
+          return registration.sync.register('review');
+        });
+        const favorite = document.getElementById('favorite');
+        favorite.addEventListener('click', function(event) {
+          restaurantId = event.target.getAttribute('data-restaurant-id');
+          isFavorite = event.target.getAttribute('data-favorite');
+          // set the updateFavorite to the opposite value of isFavorite
+          let updateFavorite = (isFavorite.toString() === "true") ? "false" : "true";
+          event.target.setAttribute('data-favorite', updateFavorite);
+          event.target.classList.toggle('active');
+          event.target.setAttribute('aria-pressed', updateFavorite);
+          DBHelper.updateFavorite(restaurantId, updateFavorite);
+          return registration.sync.register('favorite');
+        });
+      }
     }, function(e) {
       console.log('ServiceWorker registration failed, ', e);
     });
   });
+}
+
+setupModal = () => {
+  // modal code based off of: https://www.w3schools.com/howto/howto_css_modals.asp
+  // and udacity accessibility lesson 11: focus (modals and keyboard traps)
+  // (from Udacity unit 2. Accessible & Responsive Web Apps)
+
+  const modal = document.getElementById('review-modal');
+  const reviewBtn = document.getElementById('review-btn');
+  const cancelBtn = document.getElementById('cancel-review');
+  let focusedElementBeforeModal;
+  let firstTabStop;
+  let lastTabStop;
+  
+  reviewBtn.addEventListener('click', function(event) {
+    focusedElementBeforeModal = document.activeElement;
+    modal.style.display = "block";
+    modal.addEventListener('keydown', trapKey);
+    let focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+    let focusableElements = modal.querySelectorAll(focusableElementsString);
+    // Convert NodeList to Array
+    focusableElements = Array.prototype.slice.call(focusableElements);
+
+    firstTabStop = focusableElements[0];
+    lastTabStop = focusableElements[focusableElements.length - 1];
+
+    firstTabStop.focus();
+  });
+
+  trapKey = (e) => {
+    // Check for TAB key press
+    if (e.keyCode === 9) {
+
+      // SHIFT + TAB
+      if (e.shiftKey) {
+        if (document.activeElement === firstTabStop) {
+          e.preventDefault();
+          lastTabStop.focus();
+        }
+
+      // TAB
+      } else {
+        if (document.activeElement === lastTabStop) {
+          e.preventDefault();
+          firstTabStop.focus();
+        }
+      }
+    }
+
+    // ESCAPE
+    if (e.keyCode === 27) {
+      modal.style.display = "none";
+      focusedElementBeforeModal.focus();
+
+    }
+  }
+
+  cancelBtn.addEventListener('click', function(event) {
+    modal.style.display = "none";
+    focusedElementBeforeModal.focus();
+  });
+
+  window.addEventListener('click', function(event) {
+    if (event.target === modal) {
+      modal.style.display = "none";
+      focusedElementBeforeModal.focus();
+    }
+  })
+
 }

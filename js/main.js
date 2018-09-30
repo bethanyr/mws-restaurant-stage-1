@@ -180,8 +180,18 @@ createRestaurantHTML = (restaurant) => {
   more.href = DBHelper.urlForRestaurant(restaurant);
   li.append(more)
 
+  const favorite = document.createElement('a');
+  favorite.innerHTML = "";
+  favorite.role="button";
+  favorite.href = "#";
+  favorite.setAttribute('aria-pressed', restaurant.is_favorite.toString());
+  favorite.className = restaurant.is_favorite.toString() === "true" ? 'favorite active' : 'favorite';
+  favorite.setAttribute('data-restaurant-id', restaurant.id);
+  favorite.setAttribute('data-favorite', restaurant.is_favorite.toString());
+  li.append(favorite);
   return li
 }
+
 
 /**
  * Add markers for current restaurants to the map.
@@ -205,6 +215,20 @@ if (navigator.serviceWorker) {
     navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
       if (registration.active) {
         initializePage();
+      }
+      if (registration.sync) { 
+        document.addEventListener('click', function(event) {
+          restaurantId = event.target.getAttribute('data-restaurant-id');
+          isFavorite = event.target.getAttribute('data-favorite');
+          if (!isFavorite) return;
+          // set the updateFavorite to the opposite value of isFavorite
+          let updateFavorite = (isFavorite.toString() === "true") ? "false" : "true";
+          event.target.setAttribute('data-favorite', updateFavorite);
+          event.target.classList.toggle('active');
+          event.target.setAttribute('aria-pressed', updateFavorite);
+          DBHelper.updateFavorite(restaurantId, updateFavorite);
+          return registration.sync.register('favorite');
+        });
       }
     }, function(e) {
       console.log('ServiceWorker registration failed, ', e);

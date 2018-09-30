@@ -42,7 +42,10 @@
     <!-- End map -->
     <!-- Beginning restaurant -->
     <section id="restaurant-container">
-      <h2 id="restaurant-name"></h2>
+      <div id="restaurant-header">
+          <h2 id="restaurant-name"></h2>
+          <a id="favorite" title="Add to favorite" role="button" href="#"></a>
+      </div>
       <picture id="restaurant-img"></picture>
       <p id="restaurant-cuisine"></p>
       <p id="restaurant-address"></p>
@@ -51,9 +54,38 @@
     <!-- end restaurant -->
     <!-- Beginning reviews -->
     <section id="reviews-container">
+      <a class="review" id="review-btn" role="button" href="#">Add Review</a>
       <ul id="reviews-list" tabindex="0"></ul>
     </section>
     <!-- End reviews -->
+    <div class="review-modal" id="review-modal">
+      <form class="review-form" id="add-review">
+        <h3>Have you eaten here? Add your own review...</h3>
+        <div>
+          <label for="name">Name:</label>
+          <input id="name" type="text">
+        </div>
+        <div>
+          <label for="rating">Rating:</label>
+          <select id="rating">
+            <option value=""></option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+        <div>
+          <label for="comment">Comment:</label>
+          <textarea id="comment" rows=8 cols=32></textarea>
+        </div>
+        <div>
+          <a class="review" id="save-review" role="button" href="#">Save</a>
+          <a class="review" id="cancel-review" role="button" href="#">Cancel</a>
+        </div>
+      </form>
+    </div>
   </main>
   <!-- End main -->
 
