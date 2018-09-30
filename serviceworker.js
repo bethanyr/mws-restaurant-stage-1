@@ -39,10 +39,11 @@ self.addEventListener('fetch', function(event) {
   // run the next time connected to server
   if (requestUrl.origin === 'http://localhost:1337') {
     console.log('in here');
-    if (event.request.method === 'PUT' &&  requestUrl.pathname.startsWith('/restaurants')) {
+    let requestMethod = event.request.method;
+    if (requestMethod === 'PUT' &&  requestUrl.pathname.startsWith('/restaurants')) {
       let id = requestUrl.pathname.split('/')[2]
       console.log('event request match', event);
-      fetch(event.response).then(function(response) {
+      
         let dbPromise = idb.open('restaurant-db');
         dbPromise.then(db => {
           return db.transaction('restaurants').objectStore('restaurants').get(parseInt(id))
@@ -50,14 +51,27 @@ self.addEventListener('fetch', function(event) {
           console.log('restaurant info before', restaurant);
           restaurant["is_favorite"] = restaurant["is_favorite"].toString() === "true" ? "false" : "true";
           dbPromise.then(db => {
-            db.transaction('restaurants', 'readwrite').objectStore('restaurants').put(restaurant);
+            let tx = db.transaction('restaurants', 'readwrite')
+            tx.objectStore('restaurants').put(restaurant);
+            return tx.complete;
           })
         })
+      fetch(event.response).then(function(response) {
+        console.log('attempted the request');
       }).catch(function(error) {
         //store in offline transaction store
         // let url = e.request;
-        console.log('in error section, is it because offline', error);
-
+        
+        dbPromise.then(db => {
+          let tx = db.transaction('offlineUpdates', 'readwrite');
+          tx.objectStore('offlineUpdates').put({
+            method: requestMethod, 
+            requestUrl: requestUrl.href,
+            createdAt: (new Date).getTime(),
+            type: 'updateRestaurant'
+          })
+          return tx.complete;
+        })
       });
     }
   }
@@ -113,10 +127,10 @@ function createDB() {
         let store = upgradeDB.createObjectStore('restaurants', { keyPath: 'id' });
         store.createIndex('by-neighborhood', 'neighborhood');
         store.createIndex('by-cuisine', 'cuisine_type');
-      case 1:
+      case 1:  
         let reviewStore = upgradeDB.createObjectStore('reviews', {keyPath: 'id'});
         reviewStore.createIndex('by-restaurant-id', 'restaurant_id');
-        let updateStore = upgradeDB.createObjectStore('offlineUpdates');
+        upgradeDB.createObjectStore('offlineUpdates', {keyPath: 'createdAt'});
     }
   })
 }
@@ -124,6 +138,34 @@ function createDB() {
 function loadDB(db) {
   loadRestaurants(db);
   loadReviews(db);
+  syncOffline(db);
+}
+
+function syncOffline(db) {
+  // open cursor
+  // loop through each item, and perform update
+  // and then delete the item if it was successful
+  let tx = db.transaction('offlineUpdates', 'readwrite');
+  let offlineStore = tx.objectStore('offlineUpdates');
+
+  offlineStore.openCursor().then(function syncTransaction(cursor) {
+    if (!cursor) return;
+    console.log("cursored at: ", cursor.value);
+    let updateRequest = new Request(cursor.value.requestUrl, {method: cursor.value.method});
+    fetch(updateRequest)
+      .then(response => {
+        if (response.status === 200) {
+          return;
+        } else
+          throw new Error('Unable to update');
+      }).catch(error => {
+        console.error('An error occured updating', error);
+      })
+    cursor.delete();
+    return cursor.continue().then(syncTransaction);
+  }).then(() => {
+    console.log('finished with updates');
+  })
 }
 
 function loadRestaurants(db) {

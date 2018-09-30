@@ -233,7 +233,7 @@ nav h1 a {
 }
 
 #restaurants-list li a.favorite {
-  background-color: white;
+  background-color:  #fdfdfd;
   border: none;
   display: inline;
   font-size: 45px;
@@ -253,7 +253,6 @@ nav h1 a {
   z-index: 1000;
 }
 #restaurant-container a.favorite {
-  background-color: white;
   border: none;
   display: inline;
   font-size: 45px;
@@ -331,6 +330,22 @@ nav h1 a {
   font-weight: 300;
   letter-spacing: -1px;
   padding-bottom: 1pt;
+}
+#reviews-container a {
+  background-color: orange;
+  border-bottom: 3px solid #eee;
+  color: #333;
+  display: inline-block;
+  font-size: 10pt;
+  margin: 15px 0 0;
+  padding: 8px 30px 10px;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+#reviews-container .review input {
+  font-size: 10pt;
+  display: inline-block;
 }
 #reviews-list {
   margin: 0;

@@ -82,7 +82,7 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   name.innerHTML = restaurant.name;
 
   const favorite = document.getElementById('favorite');
-  favorite.innerHTML = "Favorite"
+  favorite.innerHTML = ""
   favorite.role="button"
   favorite.setAttribute('aria-pressed', restaurant.is_favorite);
   favorite.className = restaurant.is_favorite.toString() === "true" ? 'favorite active' : 'favorite';
@@ -159,6 +159,11 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
     ul.appendChild(createReviewHTML(review));
   });
   container.appendChild(ul);
+  const reviewBtn = document.getElementById('review-btn');
+  
+  reviewBtn.addEventListener('click', function(event) {
+    alert('review button clicked');
+  });
 }
 
 /**

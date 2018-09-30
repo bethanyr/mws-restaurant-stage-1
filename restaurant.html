@@ -52,12 +52,26 @@
     <!-- end restaurant -->
     <!-- Beginning reviews -->
     <section id="reviews-container">
-      <a role="button">Add Review</a>
-      <label id="name">Name:</label>
-      <input id="name">
-      <label id="name">Name:</label>
-      <input id="name">
       <ul id="reviews-list" tabindex="0"></ul>
+      <a class="review" id="review-btn" role="button">Add Review</a>
+      <form class="review" id="add-review">
+        <p>Have you eaten here? Add your own review...</p>
+        <label for="name">Name:</label>
+        <input id="name" autocomplete="name">
+        <label for="rating">Rating:</label>
+        <select id="rating">
+          <option value=""></option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+        <label for="comment">Comment:</label>
+        <textarea id="comment"></textarea>
+        <a class="review" id="save-review" role="button">Save Review</a>
+        <a class="review" id="cancel-review" role="button">Cancel</a>
+      </form>
     </section>
     <!-- End reviews -->
   </main>

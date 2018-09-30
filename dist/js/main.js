@@ -181,7 +181,7 @@ createRestaurantHTML = (restaurant) => {
   li.append(more)
 
   const favorite = document.createElement('a');
-  favorite.innerHTML = "Favorite"
+  favorite.innerHTML = ""
   favorite.role="button"
   favorite.setAttribute('aria-pressed', restaurant.is_favorite.toString());
   favorite.className = restaurant.is_favorite.toString() === "true" ? 'favorite active' : 'favorite';
